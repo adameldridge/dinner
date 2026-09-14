@@ -2,6 +2,7 @@ import {
   collection,
   doc,
   documentId,
+  getDoc,
   onSnapshot,
   query,
   serverTimestamp,
@@ -43,6 +44,11 @@ export function subscribeToDay(dateId: string, onChange: (day: Day) => void): Un
   return onSnapshot(doc(daysCollection, dateId), (snap) => {
     onChange(snap.exists() ? ({ id: snap.id, ...(snap.data() as Omit<Day, 'id'>) }) : emptyDay(dateId))
   })
+}
+
+export async function getDay(dateId: string): Promise<Day> {
+  const snap = await getDoc(doc(daysCollection, dateId))
+  return snap.exists() ? { id: snap.id, ...(snap.data() as Omit<Day, 'id'>) } : emptyDay(dateId)
 }
 
 export function subscribeToDaysInRange(

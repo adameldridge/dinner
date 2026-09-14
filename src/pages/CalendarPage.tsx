@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../contexts/auth-context'
+import { actorName } from '../lib/actor'
 import { ALLOWED_EMAILS } from '../lib/allowlist'
 import { addDays, formatDayLabel, toDateId } from '../lib/dates'
 import { assignMeal, clearDay, setNotHome, subscribeToDaysInRange, type Day, type NotHomeEntry } from '../lib/days'
@@ -22,10 +23,6 @@ function weekLabelForIndex(weekIndex: number): string {
   if (weekIndex === 0) return 'This week'
   if (weekIndex === 1) return 'Next week'
   return `In ${weekIndex} weeks`
-}
-
-function actorName(user: { displayName: string | null; email: string | null }): string {
-  return user.displayName || user.email || 'Someone'
 }
 
 function Spinner() {

@@ -20,6 +20,9 @@ export function AppShell({ children }: { children: ReactNode }) {
             <NavLink to="/meals" className={navLinkClass}>
               Meals
             </NavLink>
+            <NavLink to="/proposals" className={navLinkClass}>
+              Proposals
+            </NavLink>
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm text-slate-500">
