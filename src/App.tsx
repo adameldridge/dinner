@@ -1,11 +1,42 @@
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { AppShell } from './components/AppShell'
+import { AuthProvider } from './contexts/AuthContext'
+import { useAuth } from './contexts/auth-context'
+import { HomePage } from './pages/HomePage'
+import { SignInPage } from './pages/SignInPage'
+
+function AuthGate() {
+  const { user, loading } = useAuth()
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
+        Loading…
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <SignInPage />
+  }
+
+  return (
+    <AppShell>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AppShell>
+  )
+}
+
 function App() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <div className="text-center">
-        <h1 className="text-3xl font-semibold text-slate-800">Dinner Planner</h1>
-        <p className="mt-2 text-slate-500">Phase 0 scaffold — auth and screens land in later phases.</p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 
