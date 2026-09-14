@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../contexts/auth-context'
 import { ALLOWED_EMAILS } from '../lib/allowlist'
 import { addDays, formatDayLabel, toDateId } from '../lib/dates'
@@ -172,11 +172,72 @@ function DayEditor({
   )
 }
 
+function DayRow({
+  dateId,
+  day,
+  meals,
+  isToday,
+  isExpanded,
+  onToggle,
+}: {
+  dateId: string
+  day: Day
+  meals: Meal[]
+  isToday: boolean
+  isExpanded: boolean
+  onToggle: () => void
+}) {
+  const { text, status } = summarize(day)
+  const isNotHome = status === 'notHome'
+  const hasMeal = status === 'meal'
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
+          isExpanded
+            ? 'bg-slate-100'
+            : isNotHome
+              ? 'bg-slate-50 hover:bg-slate-100'
+              : hasMeal
+                ? 'bg-green-50 hover:bg-green-100'
+                : 'hover:bg-slate-50'
+        }`}
+      >
+        <span className={`text-sm font-medium ${isNotHome ? 'text-slate-400' : isToday ? 'text-slate-800' : 'text-slate-600'}`}>
+          {formatDayLabel(dateId)}
+          {isToday && <span className="ml-2 text-xs text-slate-400">Today</span>}
+        </span>
+        <span className={`truncate text-sm ${status === 'empty' ? 'text-slate-400' : 'text-slate-700'}`}>{text}</span>
+      </button>
+
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+          isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <DayEditor key={isExpanded ? 'open' : 'closed'} dateId={dateId} day={day} meals={meals} onDone={onToggle} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function CalendarPage() {
   const dateIds = useMemo(
     () => Array.from({ length: ROLLING_WINDOW_DAYS }, (_, i) => toDateId(addDays(new Date(), i))),
     [],
   )
+  const weeks = useMemo(() => {
+    const chunks: string[][] = []
+    for (let i = 0; i < dateIds.length; i += 7) {
+      chunks.push(dateIds.slice(i, i + 7))
+    }
+    return chunks
+  }, [dateIds])
   const [days, setDays] = useState<Record<string, Day>>({})
   const [meals, setMeals] = useState<Meal[]>([])
   const [loading, setLoading] = useState(true)
@@ -196,71 +257,32 @@ export function CalendarPage() {
     <div className="mx-auto max-w-2xl">
       <h1 className="text-xl font-semibold text-slate-800">Calendar</h1>
 
-      <div className="mt-4 divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
-        {loading && <p className="p-4 text-sm text-slate-500">Loading…</p>}
+      {loading && <p className="mt-4 text-sm text-slate-500">Loading…</p>}
 
-        {!loading &&
-          dateIds.map((dateId, index) => {
-            const day = days[dateId] ?? { id: dateId, meal: null, notHome: [] }
-            const { text, status } = summarize(day)
-            const isExpanded = expandedDateId === dateId
-            const isNotHome = status === 'notHome'
-            const hasMeal = status === 'meal'
-
-            return (
-              <Fragment key={dateId}>
-                {index % 7 === 0 && (
-                  <div className="bg-slate-100 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    {weekLabelForIndex(index / 7)}
-                  </div>
-                )}
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setExpandedDateId(isExpanded ? null : dateId)}
-                    className={`flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
-                      isExpanded
-                        ? 'bg-slate-100'
-                        : isNotHome
-                          ? 'bg-slate-50 hover:bg-slate-100'
-                          : hasMeal
-                            ? 'bg-green-50 hover:bg-green-100'
-                            : 'hover:bg-slate-50'
-                    }`}
-                  >
-                    <span
-                      className={`text-sm font-medium ${
-                        isNotHome ? 'text-slate-400' : dateId === today ? 'text-slate-800' : 'text-slate-600'
-                      }`}
-                    >
-                      {formatDayLabel(dateId)}
-                      {dateId === today && <span className="ml-2 text-xs text-slate-400">Today</span>}
-                    </span>
-                    <span className={`truncate text-sm ${status === 'empty' ? 'text-slate-400' : 'text-slate-700'}`}>
-                      {text}
-                    </span>
-                  </button>
-
-                  <div
-                    className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-                      isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                    }`}
-                  >
-                    <div className="overflow-hidden">
-                      <DayEditor
-                        key={isExpanded ? 'open' : 'closed'}
-                        dateId={dateId}
-                        day={day}
-                        meals={meals}
-                        onDone={() => setExpandedDateId(null)}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </Fragment>
-            )
-          })}
-      </div>
+      {!loading && (
+        <div className="mt-4 space-y-6">
+          {weeks.map((weekDateIds, weekIndex) => (
+            <div key={weekDateIds[0]}>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                {weekLabelForIndex(weekIndex)}
+              </h2>
+              <div className="divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
+                {weekDateIds.map((dateId) => (
+                  <DayRow
+                    key={dateId}
+                    dateId={dateId}
+                    day={days[dateId] ?? { id: dateId, meal: null, notHome: [] }}
+                    meals={meals}
+                    isToday={dateId === today}
+                    isExpanded={expandedDateId === dateId}
+                    onToggle={() => setExpandedDateId((prev) => (prev === dateId ? null : dateId))}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
