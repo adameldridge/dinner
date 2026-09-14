@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../contexts/auth-context'
-import { ALLOWED_EMAILS } from '../lib/allowlist'
 import { addDays, formatDayLabel, toDateId } from '../lib/dates'
 import { assignMeal, clearDay, setNotHome, subscribeToDaysInRange, type Day, type NotHomeEntry } from '../lib/days'
 import { subscribeToMeals, type Meal } from '../lib/meals'
+import { subscribeToUsers, type AppUser } from '../lib/users'
 
 const ROLLING_WINDOW_DAYS = 21
 
@@ -24,10 +24,6 @@ function weekLabelForIndex(weekIndex: number): string {
   return `In ${weekIndex} weeks`
 }
 
-function actorName(user: { displayName: string | null; email: string | null }): string {
-  return user.displayName || user.email || 'Someone'
-}
-
 function Spinner() {
   return (
     <div className="flex justify-center py-6">
@@ -40,26 +36,28 @@ function DayEditor({
   dateId,
   day,
   meals,
+  users,
   onDone,
 }: {
   dateId: string
   day: Day
   meals: Meal[]
+  users: AppUser[]
   onDone: () => void
 }) {
   const { user } = useAuth()
   const [selectedMealId, setSelectedMealId] = useState(day.meal?.mealId ?? '')
   const [notHomeChecked, setNotHomeChecked] = useState<Record<string, boolean>>(
-    Object.fromEntries(ALLOWED_EMAILS.map((email) => [email, day.notHome.some((entry) => entry.email === email)])),
+    Object.fromEntries(users.map((u) => [u.email, day.notHome.some((entry) => entry.email === u.email)])),
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const anyNotHomeChecked = ALLOWED_EMAILS.some((email) => notHomeChecked[email])
+  const anyNotHomeChecked = users.some((u) => notHomeChecked[u.email])
 
   function selectMeal(mealId: string) {
     setSelectedMealId(mealId)
     if (mealId) {
-      setNotHomeChecked(Object.fromEntries(ALLOWED_EMAILS.map((email) => [email, false])))
+      setNotHomeChecked(Object.fromEntries(users.map((u) => [u.email, false])))
     }
   }
 
@@ -84,13 +82,16 @@ function DayEditor({
           setSaving(false)
           return
         }
-        await assignMeal(dateId, { mealId: meal.id, mealName: meal.name }, { uid: user.uid, name: actorName(user) })
-      } else if (ALLOWED_EMAILS.some((email) => notHomeChecked[email])) {
-        const entries: NotHomeEntry[] = ALLOWED_EMAILS.filter((email) => notHomeChecked[email]).map((email) => ({
-          email,
-          name: email === user.email ? actorName(user) : email.split('@')[0],
-          reason: '',
-        }))
+        const actorAppUser = users.find((u) => u.email === user.email)
+        await assignMeal(
+          dateId,
+          { mealId: meal.id, mealName: meal.name },
+          { uid: user.uid, name: actorAppUser?.name ?? user.email ?? 'Someone' },
+        )
+      } else if (users.some((u) => notHomeChecked[u.email])) {
+        const entries: NotHomeEntry[] = users
+          .filter((u) => notHomeChecked[u.email])
+          .map((u) => ({ email: u.email, name: u.name, reason: '' }))
         await setNotHome(dateId, entries)
       } else {
         await clearDay(dateId)
@@ -132,20 +133,20 @@ function DayEditor({
       <div>
         <h3 className="text-sm font-semibold text-slate-700">Mark not home</h3>
         <div className="mt-2 space-y-2">
-          {ALLOWED_EMAILS.map((email) => (
+          {users.map((u) => (
             <label
-              key={email}
-              htmlFor={`not-home-${dateId}-${email}`}
+              key={u.email}
+              htmlFor={`not-home-${dateId}-${u.email}`}
               className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
             >
               <input
                 type="checkbox"
-                id={`not-home-${dateId}-${email}`}
-                checked={notHomeChecked[email] ?? false}
-                onChange={(e) => toggleNotHome(email, e.target.checked)}
+                id={`not-home-${dateId}-${u.email}`}
+                checked={notHomeChecked[u.email] ?? false}
+                onChange={(e) => toggleNotHome(u.email, e.target.checked)}
                 className="cursor-pointer"
               />
-              {email === user?.email ? 'You' : email.split('@')[0]}
+              {u.email === user?.email ? 'You' : u.name}
             </label>
           ))}
         </div>
@@ -176,6 +177,7 @@ function DayRow({
   dateId,
   day,
   meals,
+  users,
   isToday,
   isExpanded,
   onToggle,
@@ -183,6 +185,7 @@ function DayRow({
   dateId: string
   day: Day
   meals: Meal[]
+  users: AppUser[]
   isToday: boolean
   isExpanded: boolean
   onToggle: () => void
@@ -219,7 +222,7 @@ function DayRow({
         }`}
       >
         <div className="overflow-hidden">
-          <DayEditor key={isExpanded ? 'open' : 'closed'} dateId={dateId} day={day} meals={meals} onDone={onToggle} />
+          <DayEditor key={isExpanded ? 'open' : 'closed'} dateId={dateId} day={day} meals={meals} users={users} onDone={onToggle} />
         </div>
       </div>
     </div>
@@ -240,6 +243,7 @@ export function CalendarPage() {
   }, [dateIds])
   const [days, setDays] = useState<Record<string, Day>>({})
   const [meals, setMeals] = useState<Meal[]>([])
+  const [users, setUsers] = useState<AppUser[]>([])
   const [loading, setLoading] = useState(true)
   const [expandedDateId, setExpandedDateId] = useState<string | null>(null)
   const today = dateIds[0]
@@ -252,6 +256,7 @@ export function CalendarPage() {
   }, [dateIds])
 
   useEffect(() => subscribeToMeals(setMeals), [])
+  useEffect(() => subscribeToUsers(setUsers), [])
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -273,6 +278,7 @@ export function CalendarPage() {
                     dateId={dateId}
                     day={days[dateId] ?? { id: dateId, meal: null, notHome: [] }}
                     meals={meals}
+                    users={users}
                     isToday={dateId === today}
                     isExpanded={expandedDateId === dateId}
                     onToggle={() => setExpandedDateId((prev) => (prev === dateId ? null : dateId))}
