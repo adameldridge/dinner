@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Hard allowlist: only these two Google accounts may read or write anything.
+    // TODO: 'adameldridge89@gmail.com' is Adam's own second account, used
+    // temporarily to test both sides of the app. Replace it with the
+    // partner's real Google account email before real use (docs/BUILD_PLAN.md §8).
+    function isAllowedUser() {
+      return request.auth != null &&
+        request.auth.token.email in [
+          'adam@avari.technology',
+          'adameldridge89@gmail.com'
+        ];
+    }
+
+    match /meals/{mealId} {
+      allow read, write: if isAllowedUser();
+    }
+
+    match /days/{dayId} {
+      allow read, write: if isAllowedUser();
+    }
+
+    match /proposals/{proposalId} {
+      allow read, write: if isAllowedUser();
+
+      match /items/{itemId} {
+        allow read, write: if isAllowedUser();
+      }
+    }
+
+    // Each person's notifications live under their own uid, but permissions are
+    // symmetric — either account can write into either inbox (e.g. to notify
+    // the other person of a proposal/agreement).
+    match /notifications/{uid}/items/{notifId} {
+      allow read, write: if isAllowedUser();
+    }
+  }
+}
