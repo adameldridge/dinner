@@ -3,12 +3,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Hard allowlist: only these two Google accounts may read or write anything.
-    // TODO: replace with partner's real Google account email (see docs/BUILD_PLAN.md §8).
+    // TODO: 'adameldridge89@gmail.com' is Adam's own second account, used
+    // temporarily to test both sides of the app. Replace it with the
+    // partner's real Google account email before real use (docs/BUILD_PLAN.md §8).
     function isAllowedUser() {
       return request.auth != null &&
         request.auth.token.email in [
           'adam@avari.technology',
-          'TODO_PARTNER_EMAIL@example.com'
+          'adameldridge89@gmail.com'
         ];
     }
 
