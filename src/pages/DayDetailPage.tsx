@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../contexts/auth-context'
 import { ALLOWED_EMAILS } from '../lib/allowlist'
 import { formatFullDayLabel } from '../lib/dates'
@@ -12,6 +12,7 @@ function actorName(user: { displayName: string | null; email: string | null }): 
 
 export function DayDetailPage() {
   const { date: dateId } = useParams<{ date: string }>()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const [day, setDay] = useState<Day | null>(null)
   const [meals, setMeals] = useState<Meal[]>([])
@@ -58,9 +59,9 @@ export function DayDetailPage() {
     setError(null)
     try {
       await assignMeal(dateId, { mealId: meal.id, mealName: meal.name }, { uid: user.uid, name: actorName(user) })
+      navigate('/')
     } catch {
       setError('Failed to save. Please try again.')
-    } finally {
       setSaving(false)
     }
   }
@@ -77,9 +78,9 @@ export function DayDetailPage() {
     setError(null)
     try {
       await setNotHome(dateId, entries)
+      navigate('/')
     } catch {
       setError('Failed to save. Please try again.')
-    } finally {
       setSaving(false)
     }
   }
@@ -90,9 +91,9 @@ export function DayDetailPage() {
     setSaving(true)
     try {
       await clearDay(dateId)
+      navigate('/')
     } catch {
       setError('Failed to clear. Please try again.')
-    } finally {
       setSaving(false)
     }
   }
