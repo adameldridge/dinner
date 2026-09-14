@@ -1,6 +1,6 @@
 # Dinner Planner — Build Plan
 
-A private, two-person web app (Android to follow) for planning shared dinners, restricted to you and your partner via Google sign-in.
+A private, two-person web app for planning shared dinners, restricted to you and your partner via Google sign-in. Installable on phones as a PWA (Add to Home Screen) — see §6's polish work; a separate native Android app was considered and dropped once the PWA covered that need.
 
 ## 1. Confirmed requirements
 
@@ -12,15 +12,15 @@ A private, two-person web app (Android to follow) for planning shared dinners, r
 - Protein add-ons (chicken / fake meat) are **not** tracked in the app — out of scope, stays a personal cooking habit.
 
 **Notifications**
-- MVP (web): in-app only — a notification feed/bell inside the app for "meal proposed" and "meal agreed" events. No browser push yet.
-- Later (Android phase): real push via Firebase Cloud Messaging, once the Capacitor-wrapped Android app exists.
+- MVP (web): in-app only — a notification feed/bell inside the app for events TBD (was "meal proposed"/"meal agreed", needs rethinking — see §1's Proposals note). No browser push yet.
+- Real push (optional, later): now that there's no native Android app (below), this would mean Web Push via the PWA's own service worker rather than FCM+Capacitor — a decision to make if/when actually wanted, not planned work right now.
 
 **Access control**
 - Google SSO, hard-restricted to your two specific Google accounts (email allowlist). Anyone else who signs in is rejected.
 
 **Platforms**
-- Build the web app first (React + Vite + TypeScript).
-- Android comes later as a **sideload-only APK**: the same web app wrapped with Capacitor (no Play Store listing). Capacitor supports push notifications via its Push Notifications plugin + FCM, so this path doesn't block the later notification phase.
+- Web app only (React + Vite + TypeScript), installable on phones as a PWA (Add to Home Screen) — see §6's polish phase.
+- ~~Android~~ — **dropped**. Was planned as a sideload-only APK (the web app wrapped with Capacitor, no Play Store listing) — see §6 Phase 7. Adam decided it wasn't needed once the PWA covered "installed on my phone."
 
 **Permissions**
 - Fully symmetric: both accounts can manage the meal repertoire and manually edit any day.
@@ -29,14 +29,13 @@ A private, two-person web app (Android to follow) for planning shared dinners, r
 
 | Layer | Choice | Why |
 |---|---|---|
-| Frontend | React + TypeScript + Vite | Fast dev loop, plain web app now, Capacitor-wrappable later |
+| Frontend | React + TypeScript + Vite | Fast dev loop, plain web app |
 | Styling | CSS modules or a lightweight utility framework (e.g. Tailwind) | Defaulting to Tailwind unless Adam says otherwise |
 | Backend | Firebase (Spark = free tier) | Auth, database, and hosting all covered — see §5 |
 | Auth | Firebase Authentication, Google provider | Native Google SSO, free, no Cloud Functions needed |
 | Database | Cloud Firestore | Real-time listeners make "partner sees my update instantly" easy, and it's free at this tiny scale |
 | Hosting | Firebase Hosting | Free HTTPS hosting for the web app |
-| Android (later) | Capacitor wrapping the same web build | One React codebase, sideloaded APK, no Play Store fees/review |
-| Push (later) | Firebase Cloud Messaging via Capacitor plugin | Works for the sideloaded Android app |
+| Install | PWA (`vite-plugin-pwa` — manifest + service worker) | "Add to Home Screen" on a phone, no app store, no separate native codebase |
 
 No custom backend server or Cloud Functions are needed for the MVP — everything is done with Firestore security rules plus client-side reads/writes.
 
@@ -89,7 +88,7 @@ Confirmed against current Firebase pricing (Spark = no-cost plan):
 | Hosting | 10 GB storage, 360 MB/day transfer | Yes |
 | Cloud Functions | **Not available on Spark** — requires Blaze | Not needed — MVP avoids Cloud Functions entirely |
 
-So the whole MVP (web app, symmetric permissions, in-app notifications) fits comfortably on Firebase's free Spark plan with no billing account required. If a future feature genuinely needs Cloud Functions (e.g. real push notifications triggered server-side, or scheduled reminders), Blaze's free-quota-before-billing tier is generous enough that a 2-person app would very likely stay at $0/month even then — but that's a decision to revisit at the Android/push phase, not now.
+So the whole MVP (web app, symmetric permissions, in-app notifications) fits comfortably on Firebase's free Spark plan with no billing account required. If a future feature genuinely needs Cloud Functions (e.g. real push notifications triggered server-side, or scheduled reminders), Blaze's free-quota-before-billing tier is generous enough that a 2-person app would very likely stay at $0/month even then — but that's a decision to revisit if/when push is actually wanted, not now.
 
 Source: https://firebase.google.com/pricing
 
@@ -114,19 +113,17 @@ Was: propose multiple (meal, date) pairs in one batch; partner reviews and accep
 Notification feed + bell badge; mark-as-read. Event types need rethinking now Phase 4 is dropped — was designed around "proposed"/"agreed" events, now more likely just "meal assigned"/"not home set" or similar. Decide the actual event set when starting this phase.
 
 **Phase 6 — Polish & deploy**
-Mobile-friendly responsive styling (this UI is what gets wrapped for Android later, so it needs to work well on a phone-sized screen), empty/loading/error states, deploy the finished MVP to Firebase Hosting.
+Mobile-friendly responsive styling (needs to work well on a phone-sized screen — it's used directly in the browser and installed as a PWA, not wrapped by a native shell), empty/loading/error states, deploy the finished MVP to Firebase Hosting. PWA install support (manifest + service worker via `vite-plugin-pwa`, real app icons/favicon) landed early as part of a mobile-polish pass, ahead of the rest of this phase's work.
 
-**Phase 7 — Android (separate later effort)**
-Wrap the web build with Capacitor, build a sideloaded APK, add real push notifications via FCM (event types per Phase 5) and decide then whether to also add browser push for the web version.
+**Phase 7 — Android — dropped**
+Was: wrap the web build with Capacitor, build a sideloaded APK, add real push notifications via FCM. Adam decided a native Android app wasn't needed once Phase 6's PWA install support covered "installed on my phone" — the web app installed via a phone browser's "Add to Home Screen" does the job without a separate Capacitor codebase, app-store-style install flow, or FCM setup.
 
 ## 7. Small open items (defaults in effect unless Adam says otherwise)
 
 - Styling library: Tailwind.
 - Calendar view window: 3-week rolling window (current week + next 2), adjustable later.
 
-## 8. Still needed before Phase 1 (auth) can be finished
+## 8. Needed before Phase 1 (auth) could be finished — done
 
-- Partner's Google account email, for the two-email allowlist.
-- A Firebase project (Adam needs to create one at https://console.firebase.google.com, enable Authentication → Google provider, Firestore, and Hosting) and its web app config (apiKey, authDomain, projectId, etc.) to put in the app's env vars.
-
-These aren't needed to start Phase 0 scaffolding, only to wire up real auth/data in Phase 1.
+- ~~Partner's Google account email, for the two-email allowlist.~~ Done — and superseded anyway: access control moved from a hardcoded email allowlist to a Firestore `users` collection (see `CLAUDE.md`'s Access control quick fact), so this is now just "does a `users/{email}` document exist," managed in the Firebase console.
+- ~~A Firebase project... and its web app config.~~ Done — project `dinner-4bfa2`, live at https://dinner-4bfa2.web.app.

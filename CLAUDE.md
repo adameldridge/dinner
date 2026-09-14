@@ -1,6 +1,6 @@
 # Dinner Planner
 
-Private, two-person meal-planning web app for Adam and his partner (Android to follow later). Full spec, data model, screens, and phased build plan: see `docs/BUILD_PLAN.md` — read that before writing code.
+Private, two-person meal-planning web app for Adam and his partner, installable on phones as a PWA. Full spec, data model, screens, and phased build plan: see `docs/BUILD_PLAN.md` — read that before writing code.
 
 ## Quick facts
 
@@ -9,7 +9,7 @@ Private, two-person meal-planning web app for Adam and his partner (Android to f
 - **Permissions**: fully symmetric between the two accounts — no owner/admin distinction.
 - **Day model**: a day has either a planned meal, or one/both people marked "not home" with a reason — never both. Not-home means no meal is needed that day at all.
 - **Proposals**: dropped from scope. Built twice (a standalone batch screen, then folded into the calendar's day editor) and removed both times — Adam found it too confusing. Manual day assignment (no approval step) is the only way to set a day's meal. See `docs/BUILD_PLAN.md` §1/§6 for the history if this ever comes back up.
-- **Android (later, not now)**: same web build wrapped with Capacitor into a sideloaded APK — no Play Store. Push notifications later via FCM through Capacitor's plugin.
+- **Android**: dropped from scope. Was planned as a Capacitor-wrapped sideloaded APK (`docs/BUILD_PLAN.md` §6 Phase 7) — no longer needed once the app became installable as a PWA (Add to Home Screen) directly from a phone browser.
 - Protein add-ons (chicken for partner / fake meat for Adam) are intentionally **not** modeled — out of scope.
 
 ## Workflow
