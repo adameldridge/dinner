@@ -199,6 +199,7 @@ export function CalendarPage() {
             const { text, status } = summarize(day)
             const isExpanded = expandedDateId === dateId
             const isNotHome = status === 'notHome'
+            const hasMeal = status === 'meal'
 
             return (
               <div key={dateId}>
@@ -206,7 +207,13 @@ export function CalendarPage() {
                   type="button"
                   onClick={() => setExpandedDateId(isExpanded ? null : dateId)}
                   className={`flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
-                    isExpanded ? 'bg-slate-100' : isNotHome ? 'bg-slate-50 hover:bg-slate-100' : 'hover:bg-slate-50'
+                    isExpanded
+                      ? 'bg-slate-100'
+                      : isNotHome
+                        ? 'bg-slate-50 hover:bg-slate-100'
+                        : hasMeal
+                          ? 'bg-green-50 hover:bg-green-100'
+                          : 'hover:bg-slate-50'
                   }`}
                 >
                   <span
@@ -217,11 +224,7 @@ export function CalendarPage() {
                     {formatDayLabel(dateId)}
                     {dateId === today && <span className="ml-2 text-xs text-slate-400">Today</span>}
                   </span>
-                  <span
-                    className={`truncate text-sm ${
-                      status === 'meal' ? 'font-medium text-green-700' : 'text-slate-400'
-                    }`}
-                  >
+                  <span className={`truncate text-sm ${status === 'empty' ? 'text-slate-400' : 'text-slate-700'}`}>
                     {text}
                   </span>
                 </button>
