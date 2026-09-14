@@ -133,7 +133,7 @@ export function MealFormPage() {
                 <button
                   type="button"
                   onClick={() => removeIngredientRow(index)}
-                  className="rounded-md border border-slate-300 px-2 text-slate-500 hover:bg-slate-100"
+                  className="cursor-pointer rounded-md border border-slate-300 px-2 text-slate-500 hover:bg-slate-100"
                   aria-label="Remove ingredient"
                 >
                   ×
@@ -144,7 +144,7 @@ export function MealFormPage() {
           <button
             type="button"
             onClick={addIngredientRow}
-            className="mt-2 text-sm text-slate-600 underline"
+            className="mt-2 cursor-pointer text-sm text-slate-600 underline"
           >
             + Add ingredient
           </button>
@@ -170,7 +170,7 @@ export function MealFormPage() {
             <button
               type="submit"
               disabled={saving}
-              className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+              className="cursor-pointer rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Save
             </button>
@@ -187,7 +187,7 @@ export function MealFormPage() {
               type="button"
               onClick={() => void handleDelete()}
               disabled={saving}
-              className="text-sm text-red-600 hover:underline disabled:opacity-50"
+              className="cursor-pointer text-sm text-red-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
             >
               Remove meal
             </button>
