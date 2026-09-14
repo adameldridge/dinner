@@ -15,7 +15,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span className="font-semibold text-slate-800">Dinner Planner</span>
           <nav className="flex gap-4">
             <NavLink to="/" end className={navLinkClass}>
-              Home
+              Calendar
             </NavLink>
             <NavLink to="/meals" className={navLinkClass}>
               Meals

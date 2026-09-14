@@ -2,7 +2,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './contexts/auth-context'
-import { HomePage } from './pages/HomePage'
+import { CalendarPage } from './pages/CalendarPage'
+import { DayDetailPage } from './pages/DayDetailPage'
 import { MealFormPage } from './pages/MealFormPage'
 import { MealsPage } from './pages/MealsPage'
 import { SignInPage } from './pages/SignInPage'
@@ -25,7 +26,8 @@ function AuthGate() {
   return (
     <AppShell>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<CalendarPage />} />
+        <Route path="/day/:date" element={<DayDetailPage />} />
         <Route path="/meals" element={<MealsPage />} />
         <Route path="/meals/new" element={<MealFormPage />} />
         <Route path="/meals/:id/edit" element={<MealFormPage />} />
