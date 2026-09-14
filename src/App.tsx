@@ -3,6 +3,8 @@ import { AppShell } from './components/AppShell'
 import { AuthProvider } from './contexts/AuthContext'
 import { useAuth } from './contexts/auth-context'
 import { HomePage } from './pages/HomePage'
+import { MealFormPage } from './pages/MealFormPage'
+import { MealsPage } from './pages/MealsPage'
 import { SignInPage } from './pages/SignInPage'
 
 function AuthGate() {
@@ -24,6 +26,9 @@ function AuthGate() {
     <AppShell>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/meals" element={<MealsPage />} />
+        <Route path="/meals/new" element={<MealFormPage />} />
+        <Route path="/meals/:id/edit" element={<MealFormPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AppShell>
