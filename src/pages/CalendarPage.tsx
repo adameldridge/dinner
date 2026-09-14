@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { Fragment, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../contexts/auth-context'
 import { ALLOWED_EMAILS } from '../lib/allowlist'
 import { addDays, formatDayLabel, toDateId } from '../lib/dates'
@@ -16,6 +16,12 @@ function summarize(day: Day | undefined): { text: string; status: DayStatus } {
     return { text: `${names} not home`, status: 'notHome' }
   }
   return { text: 'No plan yet', status: 'empty' }
+}
+
+function weekLabelForIndex(weekIndex: number): string {
+  if (weekIndex === 0) return 'This week'
+  if (weekIndex === 1) return 'Next week'
+  return `In ${weekIndex} weeks`
 }
 
 function actorName(user: { displayName: string | null; email: string | null }): string {
@@ -194,7 +200,7 @@ export function CalendarPage() {
         {loading && <p className="p-4 text-sm text-slate-500">Loading…</p>}
 
         {!loading &&
-          dateIds.map((dateId) => {
+          dateIds.map((dateId, index) => {
             const day = days[dateId] ?? { id: dateId, meal: null, notHome: [] }
             const { text, status } = summarize(day)
             const isExpanded = expandedDateId === dateId
@@ -202,49 +208,56 @@ export function CalendarPage() {
             const hasMeal = status === 'meal'
 
             return (
-              <div key={dateId}>
-                <button
-                  type="button"
-                  onClick={() => setExpandedDateId(isExpanded ? null : dateId)}
-                  className={`flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
-                    isExpanded
-                      ? 'bg-slate-100'
-                      : isNotHome
-                        ? 'bg-slate-50 hover:bg-slate-100'
-                        : hasMeal
-                          ? 'bg-green-50 hover:bg-green-100'
-                          : 'hover:bg-slate-50'
-                  }`}
-                >
-                  <span
-                    className={`text-sm font-medium ${
-                      isNotHome ? 'text-slate-400' : dateId === today ? 'text-slate-800' : 'text-slate-600'
+              <Fragment key={dateId}>
+                {index % 7 === 0 && (
+                  <div className="bg-slate-100 px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {weekLabelForIndex(index / 7)}
+                  </div>
+                )}
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedDateId(isExpanded ? null : dateId)}
+                    className={`flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
+                      isExpanded
+                        ? 'bg-slate-100'
+                        : isNotHome
+                          ? 'bg-slate-50 hover:bg-slate-100'
+                          : hasMeal
+                            ? 'bg-green-50 hover:bg-green-100'
+                            : 'hover:bg-slate-50'
                     }`}
                   >
-                    {formatDayLabel(dateId)}
-                    {dateId === today && <span className="ml-2 text-xs text-slate-400">Today</span>}
-                  </span>
-                  <span className={`truncate text-sm ${status === 'empty' ? 'text-slate-400' : 'text-slate-700'}`}>
-                    {text}
-                  </span>
-                </button>
+                    <span
+                      className={`text-sm font-medium ${
+                        isNotHome ? 'text-slate-400' : dateId === today ? 'text-slate-800' : 'text-slate-600'
+                      }`}
+                    >
+                      {formatDayLabel(dateId)}
+                      {dateId === today && <span className="ml-2 text-xs text-slate-400">Today</span>}
+                    </span>
+                    <span className={`truncate text-sm ${status === 'empty' ? 'text-slate-400' : 'text-slate-700'}`}>
+                      {text}
+                    </span>
+                  </button>
 
-                <div
-                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
-                    isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-                  }`}
-                >
-                  <div className="overflow-hidden">
-                    <DayEditor
-                      key={isExpanded ? 'open' : 'closed'}
-                      dateId={dateId}
-                      day={day}
-                      meals={meals}
-                      onDone={() => setExpandedDateId(null)}
-                    />
+                  <div
+                    className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                      isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                    }`}
+                  >
+                    <div className="overflow-hidden">
+                      <DayEditor
+                        key={isExpanded ? 'open' : 'closed'}
+                        dateId={dateId}
+                        day={day}
+                        meals={meals}
+                        onDone={() => setExpandedDateId(null)}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Fragment>
             )
           })}
       </div>
