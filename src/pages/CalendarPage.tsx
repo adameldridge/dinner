@@ -5,17 +5,19 @@ import { ALLOWED_EMAILS } from '../lib/allowlist'
 import { addDays, formatDayLabel, toDateId } from '../lib/dates'
 import { assignMeal, clearDay, setNotHome, subscribeToDaysInRange, type Day, type NotHomeEntry } from '../lib/days'
 import { subscribeToMeals, type Meal } from '../lib/meals'
+import { createProposal, subscribeToProposalItems, type ProposalItem } from '../lib/proposals'
 
 const ROLLING_WINDOW_DAYS = 21
 
-type DayStatus = 'meal' | 'notHome' | 'empty'
+type DayStatus = 'meal' | 'notHome' | 'proposed' | 'empty'
 
-function summarize(day: Day | undefined): { text: string; status: DayStatus } {
+function summarize(day: Day | undefined, pendingProposal: ProposalItem | undefined): { text: string; status: DayStatus } {
   if (day?.meal) return { text: day.meal.mealName, status: 'meal' }
   if (day?.notHome.length) {
     const names = day.notHome.map((entry) => entry.name).join(' & ')
     return { text: `${names} not home`, status: 'notHome' }
   }
+  if (pendingProposal) return { text: `Proposed: ${pendingProposal.mealName}`, status: 'proposed' }
   return { text: 'No plan yet', status: 'empty' }
 }
 
@@ -99,6 +101,25 @@ function DayEditor({
     }
   }
 
+  async function handlePropose() {
+    if (!user || !selectedMealId) return
+    const meal = meals.find((m) => m.id === selectedMealId)
+    if (!meal) return
+
+    setSaving(true)
+    setError(null)
+    try {
+      await createProposal([{ mealId: meal.id, mealName: meal.name, date: dateId }], {
+        uid: user.uid,
+        name: actorName(user),
+      })
+      onDone()
+    } catch {
+      setError('Failed to propose. Please try again.')
+      setSaving(false)
+    }
+  }
+
   if (saving) {
     return <Spinner />
   }
@@ -150,13 +171,22 @@ function DayEditor({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           type="submit"
           className="cursor-pointer rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
         >
-          Save
+          {selectedMealId ? 'Assign' : 'Save'}
         </button>
+        {selectedMealId && (
+          <button
+            type="button"
+            onClick={() => void handlePropose()}
+            className="cursor-pointer rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600"
+          >
+            Propose
+          </button>
+        )}
         <button
           type="button"
           onClick={onDone}
@@ -173,6 +203,7 @@ function DayRow({
   dateId,
   day,
   meals,
+  pendingProposal,
   isToday,
   isExpanded,
   onToggle,
@@ -180,13 +211,15 @@ function DayRow({
   dateId: string
   day: Day
   meals: Meal[]
+  pendingProposal: ProposalItem | undefined
   isToday: boolean
   isExpanded: boolean
   onToggle: () => void
 }) {
-  const { text, status } = summarize(day)
+  const { text, status } = summarize(day, pendingProposal)
   const isNotHome = status === 'notHome'
   const hasMeal = status === 'meal'
+  const isProposed = status === 'proposed'
 
   return (
     <div>
@@ -200,7 +233,9 @@ function DayRow({
               ? 'bg-slate-50 hover:bg-slate-100'
               : hasMeal
                 ? 'bg-green-50 hover:bg-green-100'
-                : 'hover:bg-slate-50'
+                : isProposed
+                  ? 'bg-amber-50 hover:bg-amber-100'
+                  : 'hover:bg-slate-50'
         }`}
       >
         <span className={`text-sm font-medium ${isNotHome ? 'text-slate-400' : isToday ? 'text-slate-800' : 'text-slate-600'}`}>
@@ -237,6 +272,7 @@ export function CalendarPage() {
   }, [dateIds])
   const [days, setDays] = useState<Record<string, Day>>({})
   const [meals, setMeals] = useState<Meal[]>([])
+  const [pendingProposalsByDate, setPendingProposalsByDate] = useState<Record<string, ProposalItem>>({})
   const [loading, setLoading] = useState(true)
   const [expandedDateId, setExpandedDateId] = useState<string | null>(null)
   const today = dateIds[0]
@@ -249,6 +285,16 @@ export function CalendarPage() {
   }, [dateIds])
 
   useEffect(() => subscribeToMeals(setMeals), [])
+
+  useEffect(
+    () =>
+      subscribeToProposalItems((items) => {
+        setPendingProposalsByDate(
+          Object.fromEntries(items.filter((item) => item.status === 'pending').map((item) => [item.date, item])),
+        )
+      }),
+    [],
+  )
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -270,6 +316,7 @@ export function CalendarPage() {
                     dateId={dateId}
                     day={days[dateId] ?? { id: dateId, meal: null, notHome: [] }}
                     meals={meals}
+                    pendingProposal={pendingProposalsByDate[dateId]}
                     isToday={dateId === today}
                     isExpanded={expandedDateId === dateId}
                     onToggle={() => setExpandedDateId((prev) => (prev === dateId ? null : dateId))}
