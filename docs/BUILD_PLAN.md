@@ -8,7 +8,7 @@ A private, two-person web app (Android to follow) for planning shared dinners, r
 - Meal repertoire: add / edit / remove a meal, with a list of ingredient names.
 - Per day: assign a meal, **or** mark one or both of you as "not home" with a free-text reason. These are mutually exclusive — if either person is marked not-home, that day simply doesn't need a meal planned at all.
 - Manual day assignment: either of you can directly set a day's meal at any time (e.g. something agreed in person), with no approval step.
-- Proposals: either of you can propose one or more (meal, date) pairs in a single batch. The other person accepts or rejects each proposed item individually. Each accepted item is written straight to that date on the calendar; rejected items are simply dropped.
+- ~~Proposals~~ — **dropped** (see §6 Phase 4). Was: either of you can propose one or more (meal, date) pairs in a single batch, the other accepts/rejects each individually. Built (including a version folded into the calendar's day editor instead of a separate batch screen) but removed — Adam found it too confusing. Manual day assignment (above) is the only way to set a day's meal.
 - Protein add-ons (chicken / fake meat) are **not** tracked in the app — out of scope, stays a personal cooking habit.
 
 **Notifications**
@@ -23,7 +23,7 @@ A private, two-person web app (Android to follow) for planning shared dinners, r
 - Android comes later as a **sideload-only APK**: the same web app wrapped with Capacitor (no Play Store listing). Capacitor supports push notifications via its Push Notifications plugin + FCM, so this path doesn't block the later notification phase.
 
 **Permissions**
-- Fully symmetric: both accounts can manage the meal repertoire, propose meals, respond to proposals, and manually edit any day.
+- Fully symmetric: both accounts can manage the meal repertoire and manually edit any day.
 
 ## 2. Tech stack
 
@@ -33,7 +33,7 @@ A private, two-person web app (Android to follow) for planning shared dinners, r
 | Styling | CSS modules or a lightweight utility framework (e.g. Tailwind) | Defaulting to Tailwind unless Adam says otherwise |
 | Backend | Firebase (Spark = free tier) | Auth, database, and hosting all covered — see §5 |
 | Auth | Firebase Authentication, Google provider | Native Google SSO, free, no Cloud Functions needed |
-| Database | Cloud Firestore | Real-time listeners make "partner sees my proposal instantly" easy, and it's free at this tiny scale |
+| Database | Cloud Firestore | Real-time listeners make "partner sees my update instantly" easy, and it's free at this tiny scale |
 | Hosting | Firebase Hosting | Free HTTPS hosting for the web app |
 | Android (later) | Capacitor wrapping the same web build | One React codebase, sideloaded APK, no Play Store fees/review |
 | Push (later) | Firebase Cloud Messaging via Capacitor plugin | Works for the sideloaded Android app |
@@ -52,22 +52,14 @@ meals/{mealId}
   createdAt, updatedAt: timestamp
 
 days/{YYYY-MM-DD}
-  meal: { mealId, mealName, assignedBy, assignedAt, source: "manual" | "proposal" } | null
+  meal: { mealId, mealName, assignedBy, assignedAt } | null
   notHome: {
     [uid]: { reason: string }   # present only for whichever of you is away; if this
   }                             # has any entries, `meal` stays null — no meal needed
 
-proposals/{proposalId}
-  proposedBy: uid
-  createdAt: timestamp
-  items/{itemId}                # subcollection — one per (meal, date) pair
-    mealId, mealName, date
-    status: "pending" | "accepted" | "rejected"
-    respondedBy?, respondedAt?
-
 notifications/{uid}/items/{notifId}
-  type: "proposed" | "agreed"
-  date, mealName, proposalId, itemId
+  type: TBD — was "proposed" | "agreed", needs rethinking now proposals are dropped (e.g. "meal assigned")
+  date, mealName
   createdAt: timestamp
   read: boolean
 ```
@@ -75,8 +67,6 @@ notifications/{uid}/items/{notifId}
 Notes on this model:
 - `meal` and `notHome` are mutually exclusive for a given day: marking either of you not-home clears/blocks a meal for that day, since the point of a shared meal doesn't apply if someone's out. Both of you can be marked not-home on the same day, each with your own reason, if that happens.
 - Ingredients are a flat string list per Adam's answer — easy to extend to `{name, qty, unit}` later if a shopping-list feature is ever wanted, but not built now.
-- Accepting a proposal item is one write that updates both the `items/{itemId}` doc and the `days/{date}` doc — done as a Firestore transaction/batch so they can't get out of sync.
-- If an accepted item's date already has a meal (from a manual edit or another proposal), the UI should warn before overwriting rather than silently blocking — this is a trusted 2-person app, so simplicity over strict conflict rules. Confirm with Adam if he'd rather hard-block instead.
 - Notifications are written directly by the client to the other person's `notifications` subcollection (security rules restrict this to writes that only touch the two allowlisted accounts) — no Cloud Functions required.
 
 ## 4. Screens (web MVP)
@@ -86,9 +76,7 @@ Notes on this model:
 3. **Day detail** — either pick a meal from the repertoire (manual assign), or mark one/both of you not-home with a reason — picking one clears the other, since a not-home day needs no meal.
 4. **Meal repertoire** — searchable list of meals; add / edit / remove.
 5. **Meal form** — name, ingredients list, optional notes.
-6. **Propose meals** — pick one or more (meal, date) pairs and send as a single proposal.
-7. **Proposals inbox** — incoming items to accept/reject one by one; outgoing proposals with their per-item status.
-8. **Notifications** — bell icon with unread count; feed of "X proposed a meal for <date>" / "Y agreed to <meal> on <date>".
+6. **Notifications** — bell icon with unread count; feed content TBD now proposals are dropped (was built around "proposed"/"agreed" events).
 
 ## 5. Firebase free-tier check
 
@@ -101,7 +89,7 @@ Confirmed against current Firebase pricing (Spark = no-cost plan):
 | Hosting | 10 GB storage, 360 MB/day transfer | Yes |
 | Cloud Functions | **Not available on Spark** — requires Blaze | Not needed — MVP avoids Cloud Functions entirely |
 
-So the whole MVP (web app, symmetric permissions, proposals, in-app notifications) fits comfortably on Firebase's free Spark plan with no billing account required. If a future feature genuinely needs Cloud Functions (e.g. real push notifications triggered server-side, or scheduled reminders), Blaze's free-quota-before-billing tier is generous enough that a 2-person app would very likely stay at $0/month even then — but that's a decision to revisit at the Android/push phase, not now.
+So the whole MVP (web app, symmetric permissions, in-app notifications) fits comfortably on Firebase's free Spark plan with no billing account required. If a future feature genuinely needs Cloud Functions (e.g. real push notifications triggered server-side, or scheduled reminders), Blaze's free-quota-before-billing tier is generous enough that a 2-person app would very likely stay at $0/month even then — but that's a decision to revisit at the Android/push phase, not now.
 
 Source: https://firebase.google.com/pricing
 
@@ -119,23 +107,22 @@ Add / edit / (soft) remove meals with ingredient lists; list + search UI.
 **Phase 3 — Calendar & manual day planning**
 Week/calendar view; day detail screen; manual meal assignment; per-person not-home + reason.
 
-**Phase 4 — Proposals**
-Propose multiple (meal, date) pairs in one batch; partner reviews and accepts/rejects each item individually; accepted items land on the calendar; basic overwrite warning for date conflicts.
+**Phase 4 — Proposals — dropped**
+Was: propose multiple (meal, date) pairs in one batch; partner reviews and accepts/rejects each item individually; accepted items land on the calendar; basic overwrite warning for date conflicts. Built twice (a standalone batch-compose screen, then a version folded into the calendar's day editor) and removed both times — Adam found it too confusing. Manual day assignment (Phase 3, no approval step) is the only way to set a day's meal.
 
 **Phase 5 — In-app notifications**
-Notification feed + bell badge for "proposed" and "agreed" events; mark-as-read.
+Notification feed + bell badge; mark-as-read. Event types need rethinking now Phase 4 is dropped — was designed around "proposed"/"agreed" events, now more likely just "meal assigned"/"not home set" or similar. Decide the actual event set when starting this phase.
 
 **Phase 6 — Polish & deploy**
 Mobile-friendly responsive styling (this UI is what gets wrapped for Android later, so it needs to work well on a phone-sized screen), empty/loading/error states, deploy the finished MVP to Firebase Hosting.
 
 **Phase 7 — Android (separate later effort)**
-Wrap the web build with Capacitor, build a sideloaded APK, add real push notifications via FCM for "proposed"/"agreed" (and decide then whether to also add browser push for the web version).
+Wrap the web build with Capacitor, build a sideloaded APK, add real push notifications via FCM (event types per Phase 5) and decide then whether to also add browser push for the web version.
 
 ## 7. Small open items (defaults in effect unless Adam says otherwise)
 
 - Styling library: Tailwind.
 - Calendar view window: 3-week rolling window (current week + next 2), adjustable later.
-- Date-conflict handling on proposal acceptance: warn but allow overwrite (§3).
 
 ## 8. Still needed before Phase 1 (auth) can be finished
 
