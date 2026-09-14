@@ -6,8 +6,8 @@ import {
   type User,
 } from 'firebase/auth'
 import { useEffect, useState, type ReactNode } from 'react'
-import { isAllowedEmail } from '../lib/allowlist'
 import { auth, googleProvider } from '../lib/firebase'
+import { isAllowedEmail } from '../lib/users'
 import { AuthContext } from './auth-context'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -17,16 +17,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     return onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser && !isAllowedEmail(firebaseUser.email)) {
-        setError('This app is private — that Google account is not authorized.')
-        void firebaseSignOut(auth)
+      if (!firebaseUser) {
         setUser(null)
         setLoading(false)
         return
       }
 
-      setUser(firebaseUser)
-      setLoading(false)
+      setLoading(true)
+      isAllowedEmail(firebaseUser.email).then((allowed) => {
+        if (!allowed) {
+          setError('This app is private — that Google account is not authorized.')
+          void firebaseSignOut(auth)
+          setUser(null)
+        } else {
+          setUser(firebaseUser)
+        }
+        setLoading(false)
+      })
     })
   }, [])
 

@@ -2,16 +2,18 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Hard allowlist: only these two Google accounts may read or write anything.
-    // TODO: 'adameldridge89@gmail.com' is Adam's own second account, used
-    // temporarily to test both sides of the app. Replace it with the
-    // partner's real Google account email before real use (docs/BUILD_PLAN.md §8).
+    // Access is controlled by the users collection: a signed-in account whose
+    // email has a matching users/{email} document may read/write everything.
+    // Manage who's allowed by adding/removing documents there directly in the
+    // Firebase console — this rule intentionally has no client write access,
+    // so there's no in-app way to self-grant access.
     function isAllowedUser() {
       return request.auth != null &&
-        request.auth.token.email in [
-          'adam@avari.technology',
-          'adameldridge89@gmail.com'
-        ];
+        exists(/databases/$(database)/documents/users/$(request.auth.token.email));
+    }
+
+    match /users/{email} {
+      allow read: if isAllowedUser();
     }
 
     match /meals/{mealId} {
