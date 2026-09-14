@@ -18,7 +18,7 @@ Private, two-person meal-planning web app for Adam and his partner (Android to f
 
 ## Status
 
-- Phase 0 (project scaffold) done on branch `build/phase-0`, pending PR review: Vite + React + TS + Tailwind (v4, via `@tailwindcss/vite`) scaffold; `firebase` SDK client init in `src/lib/firebase.ts` reading `VITE_FIREBASE_*` env vars (see `.env.example`); `firestore.rules` with the two-email allowlist structure (partner's email still a `TODO` placeholder); `firebase.json` / `.firebaserc` / `firestore.indexes.json` for Hosting + Firestore, with `.firebaserc`'s project id also a placeholder.
-- Not yet done in Phase 0: actually creating the Firebase project and deploying, since that needs Adam's Firebase console access — see outstanding items below.
-- Next step: Adam creates the Firebase project + provides partner's email (§8), then Phase 1 (auth & shell) can start.
-- Still outstanding before Phase 1 can be completed: partner's Google account email, and a Firebase project + its web config from Adam (see `docs/BUILD_PLAN.md` §8).
+- Phase 0 (project scaffold) done on branch `build/phase-0`, pending PR review: Vite + React + TS + Tailwind (v4, via `@tailwindcss/vite`) scaffold; `firebase` SDK client init in `src/lib/firebase.ts`; `firestore.rules` with the two-email allowlist structure (partner's email still a `TODO` placeholder); `firebase.json` / `.firebaserc` / `firestore.indexes.json` for Hosting + Firestore.
+- Firebase project `dinner-4bfa2` is created (Auth, Firestore, Hosting enabled) and the pipeline is proven end-to-end: `firebase deploy --only firestore:rules,hosting` succeeded, live at https://dinner-4bfa2.web.app. The web app's Firebase config isn't a secret (it ships in the client bundle; access is controlled by `firestore.rules` + Auth, not by hiding this config) so it's hardcoded directly in `src/lib/firebase.ts` rather than via env vars.
+- Next step: Adam provides the partner's Google account email, then Phase 1 (auth & shell) can start — that's the only remaining blocker.
+- Still outstanding: partner's Google account email, to fill in the `TODO_PARTNER_EMAIL` placeholder in `firestore.rules` (see `docs/BUILD_PLAN.md` §8). Google sign-in as an Auth provider also still needs enabling in the Firebase console before Phase 1's auth flow can work.
