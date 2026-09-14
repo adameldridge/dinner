@@ -7,13 +7,15 @@ import { subscribeToMeals, type Meal } from '../lib/meals'
 
 const ROLLING_WINDOW_DAYS = 21
 
-function summarize(day: Day | undefined): { text: string; muted: boolean } {
-  if (day?.meal) return { text: day.meal.mealName, muted: false }
+type DayStatus = 'meal' | 'notHome' | 'empty'
+
+function summarize(day: Day | undefined): { text: string; status: DayStatus } {
+  if (day?.meal) return { text: day.meal.mealName, status: 'meal' }
   if (day?.notHome.length) {
     const names = day.notHome.map((entry) => entry.name).join(' & ')
-    return { text: `${names} not home`, muted: false }
+    return { text: `${names} not home`, status: 'notHome' }
   }
-  return { text: 'No plan yet', muted: true }
+  return { text: 'No plan yet', status: 'empty' }
 }
 
 function actorName(user: { displayName: string | null; email: string | null }): string {
@@ -194,8 +196,9 @@ export function CalendarPage() {
         {!loading &&
           dateIds.map((dateId) => {
             const day = days[dateId] ?? { id: dateId, meal: null, notHome: [] }
-            const { text, muted } = summarize(day)
+            const { text, status } = summarize(day)
             const isExpanded = expandedDateId === dateId
+            const isNotHome = status === 'notHome'
 
             return (
               <div key={dateId}>
@@ -203,14 +206,24 @@ export function CalendarPage() {
                   type="button"
                   onClick={() => setExpandedDateId(isExpanded ? null : dateId)}
                   className={`flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
-                    isExpanded ? 'bg-slate-100' : 'hover:bg-slate-50'
+                    isExpanded ? 'bg-slate-100' : isNotHome ? 'bg-slate-50 hover:bg-slate-100' : 'hover:bg-slate-50'
                   }`}
                 >
-                  <span className={`text-sm font-medium ${dateId === today ? 'text-slate-800' : 'text-slate-600'}`}>
+                  <span
+                    className={`text-sm font-medium ${
+                      isNotHome ? 'text-slate-400' : dateId === today ? 'text-slate-800' : 'text-slate-600'
+                    }`}
+                  >
                     {formatDayLabel(dateId)}
                     {dateId === today && <span className="ml-2 text-xs text-slate-400">Today</span>}
                   </span>
-                  <span className={`truncate text-sm ${muted ? 'text-slate-400' : 'text-slate-700'}`}>{text}</span>
+                  <span
+                    className={`truncate text-sm ${
+                      status === 'meal' ? 'font-medium text-green-700' : 'text-slate-400'
+                    }`}
+                  >
+                    {text}
+                  </span>
                 </button>
 
                 <div
