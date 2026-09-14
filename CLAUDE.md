@@ -18,6 +18,7 @@ Private, two-person meal-planning web app for Adam and his partner (Android to f
 
 ## Status
 
-- Phase 0 (project scaffold) has not been started yet. This repo currently only contains this file and `docs/BUILD_PLAN.md`, committed directly to `main` as initial setup (an exception to the branch/PR workflow above, since there was no code to conflict with).
-- Next step: scaffold the Vite + React + TS + Tailwind project (Phase 0), on branch `build/phase-0`.
+- Phase 0 (project scaffold) done on branch `build/phase-0`, pending PR review: Vite + React + TS + Tailwind (v4, via `@tailwindcss/vite`) scaffold; `firebase` SDK client init in `src/lib/firebase.ts` reading `VITE_FIREBASE_*` env vars (see `.env.example`); `firestore.rules` with the two-email allowlist structure (partner's email still a `TODO` placeholder); `firebase.json` / `.firebaserc` / `firestore.indexes.json` for Hosting + Firestore, with `.firebaserc`'s project id also a placeholder.
+- Not yet done in Phase 0: actually creating the Firebase project and deploying, since that needs Adam's Firebase console access — see outstanding items below.
+- Next step: Adam creates the Firebase project + provides partner's email (§8), then Phase 1 (auth & shell) can start.
 - Still outstanding before Phase 1 can be completed: partner's Google account email, and a Firebase project + its web config from Adam (see `docs/BUILD_PLAN.md` §8).
