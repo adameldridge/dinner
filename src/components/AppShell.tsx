@@ -54,8 +54,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white px-4 py-3">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <span className="whitespace-nowrap font-semibold text-slate-800">Dinner Planner</span>
+          <div className="flex flex-wrap items-center gap-6">
+            <span className="whitespace-nowrap text-lg font-bold tracking-tight text-slate-900">Dinner Planner</span>
             <nav className="flex gap-4">
               <NavLink to="/" end className={navLinkClass}>
                 Calendar
