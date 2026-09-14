@@ -46,6 +46,7 @@ function DayEditor({
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const anyNotHomeChecked = ALLOWED_EMAILS.some((email) => notHomeChecked[email])
 
   function selectMeal(mealId: string) {
     setSelectedMealId(mealId)
@@ -102,24 +103,26 @@ function DayEditor({
       onSubmit={(e) => void handleSave(e)}
       className="space-y-4 border-t border-slate-200 bg-slate-50 px-4 py-4"
     >
-      <div>
-        <h3 className="text-sm font-semibold text-slate-700">Assign a meal</h3>
-        <select
-          value={selectedMealId}
-          onChange={(e) => selectMeal(e.target.value)}
-          className="mt-2 w-full cursor-pointer rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-        >
-          <option value="">Choose a meal…</option>
-          {meals.map((meal) => (
-            <option key={meal.id} value={meal.id}>
-              {meal.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {!anyNotHomeChecked && (
+        <div>
+          <h3 className="text-sm font-semibold text-slate-700">Assign a meal</h3>
+          <select
+            value={selectedMealId}
+            onChange={(e) => selectMeal(e.target.value)}
+            className="mt-2 w-full cursor-pointer rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          >
+            <option value="">Choose a meal…</option>
+            {meals.map((meal) => (
+              <option key={meal.id} value={meal.id}>
+                {meal.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div>
-        <h3 className="text-sm font-semibold text-slate-700">Or mark not home</h3>
+        <h3 className="text-sm font-semibold text-slate-700">Mark not home</h3>
         <div className="mt-2 space-y-2">
           {ALLOWED_EMAILS.map((email) => (
             <label
@@ -145,7 +148,7 @@ function DayEditor({
       <div className="flex gap-2">
         <button
           type="submit"
-          className="cursor-pointer rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          className="cursor-pointer rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
         >
           Save
         </button>
