@@ -93,18 +93,6 @@ function DayEditor({
     }
   }
 
-  async function handleClear() {
-    if (!window.confirm('Clear this day back to unplanned?')) return
-    setSaving(true)
-    try {
-      await clearDay(dateId)
-      onDone()
-    } catch {
-      setError('Failed to clear. Please try again.')
-      setSaving(false)
-    }
-  }
-
   if (saving) {
     return <Spinner />
   }
@@ -119,7 +107,7 @@ function DayEditor({
         <select
           value={selectedMealId}
           onChange={(e) => selectMeal(e.target.value)}
-          className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
+          className="mt-2 w-full cursor-pointer rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
         >
           <option value="">Choose a meal…</option>
           {meals.map((meal) => (
@@ -134,12 +122,17 @@ function DayEditor({
         <h3 className="text-sm font-semibold text-slate-700">Or mark not home</h3>
         <div className="mt-2 space-y-2">
           {ALLOWED_EMAILS.map((email) => (
-            <label key={email} htmlFor={`not-home-${dateId}-${email}`} className="flex items-center gap-2 text-sm text-slate-700">
+            <label
+              key={email}
+              htmlFor={`not-home-${dateId}-${email}`}
+              className="flex cursor-pointer items-center gap-2 text-sm text-slate-700"
+            >
               <input
                 type="checkbox"
                 id={`not-home-${dateId}-${email}`}
                 checked={notHomeChecked[email] ?? false}
                 onChange={(e) => toggleNotHome(email, e.target.checked)}
+                className="cursor-pointer"
               />
               {email === user?.email ? 'You' : email.split('@')[0]}
             </label>
@@ -149,15 +142,19 @@ function DayEditor({
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
-      <div className="flex items-center justify-between">
+      <div className="flex gap-2">
         <button
           type="submit"
-          className="rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+          className="cursor-pointer rounded-md bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
         >
           Save
         </button>
-        <button type="button" onClick={() => void handleClear()} className="text-sm text-red-600 hover:underline">
-          Clear day
+        <button
+          type="button"
+          onClick={onDone}
+          className="cursor-pointer rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100"
+        >
+          Cancel
         </button>
       </div>
     </form>
@@ -202,7 +199,9 @@ export function CalendarPage() {
                 <button
                   type="button"
                   onClick={() => setExpandedDateId(isExpanded ? null : dateId)}
-                  className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left hover:bg-slate-50"
+                  className={`flex w-full cursor-pointer items-center justify-between gap-4 px-4 py-3 text-left transition-colors ${
+                    isExpanded ? 'bg-slate-100' : 'hover:bg-slate-50'
+                  }`}
                 >
                   <span className={`text-sm font-medium ${dateId === today ? 'text-slate-800' : 'text-slate-600'}`}>
                     {formatDayLabel(dateId)}
@@ -211,9 +210,21 @@ export function CalendarPage() {
                   <span className={`truncate text-sm ${muted ? 'text-slate-400' : 'text-slate-700'}`}>{text}</span>
                 </button>
 
-                {isExpanded && (
-                  <DayEditor dateId={dateId} day={day} meals={meals} onDone={() => setExpandedDateId(null)} />
-                )}
+                <div
+                  className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${
+                    isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                  }`}
+                >
+                  <div className="overflow-hidden">
+                    <DayEditor
+                      key={isExpanded ? 'open' : 'closed'}
+                      dateId={dateId}
+                      day={day}
+                      meals={meals}
+                      onDone={() => setExpandedDateId(null)}
+                    />
+                  </div>
+                </div>
               </div>
             )
           })}

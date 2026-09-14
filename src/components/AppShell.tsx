@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={() => void signOutUser()}
-            className="rounded-md border border-slate-300 px-3 py-1 text-slate-600 hover:bg-slate-100"
+            className="cursor-pointer rounded-md border border-slate-300 px-3 py-1 text-slate-600 hover:bg-slate-100"
           >
             Sign out
           </button>
