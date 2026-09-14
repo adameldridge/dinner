@@ -18,7 +18,6 @@ export interface DayMeal {
   assignedBy: string
   assignedByName: string
   assignedAt: Timestamp | null
-  source: 'manual' | 'proposal'
 }
 
 export interface NotHomeEntry {
@@ -72,7 +71,6 @@ export async function assignMeal(
       assignedBy: actor.uid,
       assignedByName: actor.name,
       assignedAt: serverTimestamp(),
-      source: 'manual',
     },
     notHome: [],
   })
