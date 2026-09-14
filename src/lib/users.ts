@@ -14,8 +14,16 @@ const usersCollection = collection(db, 'users')
 // in-app admin UI for it by design.
 export async function isAllowedEmail(email: string | null | undefined): Promise<boolean> {
   if (!email) return false
-  const snap = await getDoc(doc(usersCollection, email))
-  return snap.exists()
+  try {
+    const snap = await getDoc(doc(usersCollection, email))
+    return snap.exists()
+  } catch {
+    // firestore.rules' isAllowedUser() requires a users/{email} doc to exist
+    // for *this* email before it'll allow reading that same path — so for
+    // someone with no document, this read is denied outright rather than
+    // resolving with exists() === false. Denied means not allowed.
+    return false
+  }
 }
 
 export function subscribeToUsers(onChange: (users: AppUser[]) => void): Unsubscribe {
