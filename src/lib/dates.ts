@@ -16,6 +16,14 @@ export function addDays(date: Date, days: number): Date {
   return result
 }
 
+export function startOfWeek(date: Date): Date {
+  const day = date.getDay()
+  const diffToMonday = day === 0 ? -6 : 1 - day
+  const result = addDays(date, diffToMonday)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
+
 export function formatDayLabel(dateId: string): string {
   return parseDateId(dateId).toLocaleDateString(undefined, {
     weekday: 'short',

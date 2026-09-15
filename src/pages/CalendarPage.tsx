@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../contexts/auth-context'
-import { addDays, formatDayLabel, toDateId } from '../lib/dates'
+import { addDays, formatDayLabel, parseDateId, startOfWeek, toDateId } from '../lib/dates'
 import { assignMeal, clearDay, setNotHome, subscribeToDaysInRange, type Day, type NotHomeEntry } from '../lib/days'
 import { subscribeToMeals, type Meal } from '../lib/meals'
 import { subscribeToUsers, type AppUser } from '../lib/users'
 
-const ROLLING_WINDOW_DAYS = 21
+const WEEKS_TO_SHOW = 3
 
 type DayStatus = 'meal' | 'notHome' | 'empty'
 
@@ -230,14 +230,24 @@ function DayRow({
 }
 
 export function CalendarPage() {
-  const dateIds = useMemo(
-    () => Array.from({ length: ROLLING_WINDOW_DAYS }, (_, i) => toDateId(addDays(new Date(), i))),
-    [],
-  )
+  const dateIds = useMemo(() => {
+    const today = new Date()
+    const windowEndId = toDateId(addDays(startOfWeek(today), WEEKS_TO_SHOW * 7 - 1))
+    const ids: string[] = []
+    for (let cursor = today; toDateId(cursor) <= windowEndId; cursor = addDays(cursor, 1)) {
+      ids.push(toDateId(cursor))
+    }
+    return ids
+  }, [])
   const weeks = useMemo(() => {
+    const currentWeekStart = startOfWeek(new Date()).getTime()
     const chunks: string[][] = []
-    for (let i = 0; i < dateIds.length; i += 7) {
-      chunks.push(dateIds.slice(i, i + 7))
+    for (const dateId of dateIds) {
+      const weekIndex = Math.round(
+        (startOfWeek(parseDateId(dateId)).getTime() - currentWeekStart) / (7 * 24 * 60 * 60 * 1000),
+      )
+      chunks[weekIndex] ??= []
+      chunks[weekIndex].push(dateId)
     }
     return chunks
   }, [dateIds])
