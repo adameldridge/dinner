@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useAuth } from '../contexts/auth-context'
-import { addDays, formatDayLabel, parseDateId, startOfWeek, toDateId } from '../lib/dates'
+import { addDays, formatDateTime, formatDayLabel, parseDateId, startOfWeek, toDateId } from '../lib/dates'
 import { assignMeal, clearDay, setNotHome, subscribeToDaysInRange, type Day, type NotHomeEntry } from '../lib/days'
 import { subscribeToMeals, type Meal } from '../lib/meals'
 import { subscribeToUsers, type AppUser } from '../lib/users'
@@ -112,6 +112,13 @@ function DayEditor({
       onSubmit={(e) => void handleSave(e)}
       className="space-y-4 border-t border-slate-200 bg-slate-50 px-4 py-4"
     >
+      {day.meal && (
+        <p className="text-xs text-slate-500">
+          Assigned by {day.meal.assignedBy === user?.uid ? 'you' : day.meal.assignedByName}
+          {day.meal.assignedAt && ` on ${formatDateTime(day.meal.assignedAt.toDate())}`}
+        </p>
+      )}
+
       {!anyNotHomeChecked && (
         <div>
           <h3 className="text-sm font-semibold text-slate-700">Assign a meal</h3>
